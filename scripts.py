@@ -1,4 +1,5 @@
-from datacenter.models import (Chastisement, Commendation, Lesson, Mark, Schoolkid)
+from datacenter.models import (Chastisement, Commendation, 
+			       Lesson, Mark, Schoolkid)
 import random
 COMMENDATION_LIST = ['Молодец!',
 		     'Отлично!',
@@ -32,45 +33,55 @@ COMMENDATION_LIST = ['Молодец!',
 		     'Теперь у тебя точно все получится!']
 
 
-def schoolkid_name(schoolkid):
-	return Schoolkid.objects.get(full_name__contains=schoolkid)
+def define_schoolkid(schoolkid):
+    try:
+        return Schoolkid.objects.get(full_name__contains=schoolkid)
+    except Schoolkid.DoesNotExist:
+        raise Schoolkid.DoesNotExist("Такого ученика нет")
 
 
 def fix_marks(schoolkid):
-	try:
-		Mark.objects.filter(schoolkid__full_name=schoolkid_name(schoolkid).full_name, points__lt=4).update(points=5)
-	except Schoolkid.DoesNotExist:
-		print("Такого ученика нет")
-	except Schoolkid.MultipleObjectsReturned:
-		print("Много учеников с таким именем, уточните")
+    try:
+        Mark.objects.filter(schoolkid__full_name=define_schoolkid(schoolkid).
+			    full_name, points__lt=4).update(points=5)
+    except AttributeError:
+        pass
+    except Schoolkid.MultipleObjectsReturned:
+        raise Schoolkid.MultipleObjectsReturned(
+		'Найдено несколько учеников, уточните ФИО')
 
 
 def remove_chastisements(schoolkid):
-	try:
-		Chastisement.objects.filter(schoolkid__full_name=schoolkid_name(schoolkid).full_name).delete()
-	except Schoolkid.DoesNotExist:
-		print("Такого ученика нет")
-	except Schoolkid.MultipleObjectsReturned:
-		print("Много учеников с таким именем, уточните")
+    try:
+        Chastisement.objects.filter(schoolkid__full_name=define_schoolkid(schoolkid).
+				    full_name).delete()
+    except AttributeError:
+        pass
+    except Schoolkid.MultipleObjectsReturned:
+        raise Schoolkid.MultipleObjectsReturned(
+		'Найдено несколько учеников, уточните ФИО')
 
 
 def create_commendation(schoolkid, subject):
-	try:
-		lesson = Lesson.objects.filter(
-			year_of_study=schoolkid_name(schoolkid).year_of_study,
-			group_letter=schoolkid_name(schoolkid).group_letter,
-			subject__title=subject
+    name = define_schoolkid(schoolkid)
+    try:
+        lesson = Lesson.objects.filter(
+		year_of_study=name.year_of_study,
+		group_letter=name.group_letter,
+		subject__title=subject
 		).order_by('-date').first()
 		Commendation.objects.create(
-			subject=lesson.subject,
-			text=random.choice(COMMENDATION_LIST),
-			created=lesson.date,
-			teacher=lesson.teacher,
-			schoolkid=Schoolkid.objects.get(full_name__contains=schoolkid)
+		subject=lesson.subject,
+		text=random.choice(COMMENDATION_LIST),
+		created=lesson.date,
+		teacher=lesson.teacher,
+		schoolkid=Schoolkid.objects.get(full_name__contains=schoolkid)
 		)
-	except AttributeError:
-		print("Неправильное название предмета")
-	except Schoolkid.DoesNotExist:
-		print("Такого ученика нет")
-	except Schoolkid.MultipleObjectsReturned:
-		print("Много учеников с таким именем, уточните")
+	if not lesson:
+            print("Урок не найден, похвалу не назначить")
+
+    except AttributeError:
+        pass
+    except Schoolkid.MultipleObjectsReturned:
+        raise Schoolkid.MultipleObjectsReturned(
+		'Найдено несколько учеников, уточните ФИО')
