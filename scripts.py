@@ -61,8 +61,8 @@ def create_commendation(name, subject):
         group_letter=name.group_letter,
         subject__title=subject
         ).order_by('-date').first()
-    if not lesson:
-        raise Exception("Урок не найден, похвалу не назначить")
+        if not lesson:
+            raise Exception("Урок не найден, похвалу не назначить")
     
     Commendation.objects.create(
     subject=lesson.subject,
