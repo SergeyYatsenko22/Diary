@@ -64,12 +64,12 @@ def create_commendation(name, subject):
         if not lesson:
             raise Exception("Урок не найден, похвалу не назначить")
     
-    Commendation.objects.create(
-    subject=lesson.subject,
-    text=random.choice(COMMENDATION_LIST),
-    created=lesson.date,
-    teacher=lesson.teacher,
-    schoolkid=schoolkid
-    )
+        Commendation.objects.create(
+        subject=lesson.subject,
+        text=random.choice(COMMENDATION_LIST),
+        created=lesson.date,
+        teacher=lesson.teacher,
+        schoolkid=schoolkid
+        )
     except AttributeError:
         raise AttributeError("Неправильное название предмета")
